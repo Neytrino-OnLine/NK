@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION="beta 0.2"
+VERSION="beta 0.3"
 PROFILE_PATH='/opt/etc/nfqws'
 BUTTON='/opt/etc/ndm/button.d/nk.sh'
 BACKUP='/opt/backup-nk'
@@ -45,7 +45,6 @@ function fileSave
 
 function copyRight
 	{
-	
 	local YEAR="2024"
 	if [ "`date +"%C%y"`" -gt "$YEAR" ];then
 		local YEAR="$YEAR-`date +"%C%y"`"
@@ -1298,14 +1297,15 @@ function zyxelSetupBegining
 	echo -e "\tДанный метод подходит для маршрутизаторов ZyXEL Keenetic с USB-портом и"
 	echo "KeeneticOS версии 2.07 (и выше), кроме моделей: \"4G II\" и \"4G III\"."
 	echo "Для обновления KeeneticOS до последней доступной версии - открываем в браузере:"
-	#echo ""
 	messageBox "http://$Z_IP/a" "1"
-	echo "и вводим в поле \"Command\" одну из следующих команд:"
+	echo "         (Используйте: Ctrl+Shift+C для копирования выделенного текста)"
 	echo ""
-	echo "                         (для KeeneticOS до версии 2.06)"
-	messageBox 'components sync legacy'
-	echo "                       (для KeeneticOS версии 2.06 и выше)"
-	messageBox 'components list legacy'
+	echo "и вводим в поле \"Command\" одну из следующих команд:"
+	messageBox 'components sync legacy' "1"
+	echo "                        (для KeeneticOS до версии 2.06)"
+	messageBox 'components list legacy' "1"
+	echo "                      (для KeeneticOS версии 2.06 и выше)"
+	echo ""
 	echo -e "\t1: Продолжить"
 	echo -e "\t0: Отмена (по умолчанию)"
 	echo ""
@@ -1783,8 +1783,8 @@ function findStrategy
 	headLine "Подбор рабочей стратегии NFQWS"
 	echo -e "\tДля поиска рабочей стратегии - запустите скрипт и следуйте инструкциям."
 	echo "Подробнее о его работе - можно почитать здесь:"
-	echo ""
-	echo "                            https://clck.ru/3F84AQ"
+	messageBox "https://clck.ru/3F84AQ" "1"
+	echo "         (Используйте: Ctrl+Shift+C для копирования выделенного текста)"
 	echo ""
 	echo -e "\t1: Запустить скрипт"
 	echo -e "\t0: Отмена (по умолчанию)"
@@ -1823,12 +1823,10 @@ function extraMenu
 		read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
 	elif [ "$REPLY" = "3" ];then
 		findStrategy
-		echo ""
-		read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
+		#echo ""
+		#read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
 	elif [ "$REPLY" = "4" ];then
 		zyxelSetup
-		echo ""
-		read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
 	else
 		mainMenu
 		exit
