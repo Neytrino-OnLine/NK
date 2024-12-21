@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION="beta 0"
+VERSION="beta 0.1"
 PROFILE_PATH='/opt/etc/nfqws'
 BUTTON='/opt/etc/ndm/button.d/nk.sh'
 BACKUP='/opt/backup-nk'
