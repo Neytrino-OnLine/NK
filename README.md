@@ -11,7 +11,7 @@ wget -O /opt/bin/nk https://raw.githubusercontent.com/Neytrino-OnLine/NK/refs/he
 chmod +x /opt/bin/nk
 
 ```
-И вставить их в окно консоли (кликом по правой кнопке мыши)...
+И вставить их в окно консоли (кликом правой кнопки мыши)...
 По завершению процесса - вводим в консоль:
 ```
 nk
