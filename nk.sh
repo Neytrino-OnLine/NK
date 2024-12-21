@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION="beta 0.1"
+VERSION="beta 0.2"
 PROFILE_PATH='/opt/etc/nfqws'
 BUTTON='/opt/etc/ndm/button.d/nk.sh'
 BACKUP='/opt/backup-nk'
@@ -1292,14 +1292,15 @@ function infoNFQWS
 
 function zyxelSetupBegining
 	{
+	local Z_IP=`ip addr show br0 | awk -F" |/" '{gsub(/^ +/,"")}/inet /{print $2}'`
 	clear
 	headLine "Настройка ZyXel Keenetic"
 	echo -e "\tДанный метод подходит для маршрутизаторов ZyXEL Keenetic с USB-портом и"
 	echo "KeeneticOS версии 2.07 (и выше), кроме моделей: \"4G II\" и \"4G III\"."
 	echo "Для обновления KeeneticOS до последней доступной версии - открываем в браузере:"
-	echo ""
-	messageBox 'http://192.168.1.1/a'
-	echo "и вводим в поле \"Command\" одну из следующих команду:"
+	#echo ""
+	messageBox "http://$Z_IP/a" "1"
+	echo "и вводим в поле \"Command\" одну из следующих команд:"
 	echo ""
 	echo "                         (для KeeneticOS до версии 2.06)"
 	messageBox 'components sync legacy'
@@ -1595,6 +1596,7 @@ function nfqwsInstall
 
 function installMips
 	{
+	clear
 	headLine "Установка NFQWS-Keenetic (архитектуры mips)" "1"
 	preInstall
 	echo "src/gz nfqws-keenetic https://anonym-tsk.github.io/nfqws-keenetic/mips" > /opt/etc/opkg/nfqws-keenetic.conf
@@ -1603,6 +1605,7 @@ function installMips
 
 function installMipsel
 	{
+	clear
 	headLine "Установка NFQWS-Keenetic (архитектуры mipsel)" "1"
 	preInstall
 	echo "src/gz nfqws-keenetic https://anonym-tsk.github.io/nfqws-keenetic/mipsel" > /opt/etc/opkg/nfqws-keenetic.conf
@@ -1611,6 +1614,7 @@ function installMipsel
 
 function installAarch64
 	{
+	clear
 	headLine "Установка NFQWS-Keenetic (архитектуры aarch64" "1"
 	preInstall
 	echo "src/gz nfqws-keenetic https://anonym-tsk.github.io/nfqws-keenetic/aarch64" > /opt/etc/opkg/nfqws-keenetic.conf
@@ -1619,6 +1623,7 @@ function installAarch64
 
 function installUniversal
 	{
+	clear
 	headLine "Установка NFQWS-Keenetic (универсальный установщик)" "1"
 	preInstall
 	echo "src/gz nfqws-keenetic https://anonym-tsk.github.io/nfqws-keenetic/all" > /opt/etc/opkg/nfqws-keenetic.conf
@@ -1627,9 +1632,22 @@ function installUniversal
 
 function installWeb
 	{
+	clear
 	headLine "Установка WEB-интерфейса NFQWS-Keenetic" "1"
 	opkg install nfqws-keenetic-web
 	headLine
+	echo ""
+	echo -e "\tЕсли WEB-интерфейс не открывается, возможно требуется перезагрузить маршрутизатор..."
+	echo ""
+	echo "Хотите выполнить перезагрузку?"
+	echo ""
+	echo -e "1: Да"
+	echo -e "0: Нет (по умолчанию)"
+	echo ""
+	read -r -p "Ваш выбор:"
+	if [ "$REPLY" = "1" ];then
+		ndmc -c 'system reboot'
+	fi
 	}
 
 function updateNFQWS
@@ -1788,8 +1806,8 @@ function extraMenu
 	if [ -d "$BACKUP" ];then
 		echo -e "\t2: Удалить резервные копии NK"
 	fi
-	echo -e "\t3: Предварительная настройка ZyXel Keenetic (с KeeneticOS 2.x)"
-	echo -e "\t4: Подбор рабочей стратегии NFQWS"
+	echo -e "\t3: Подбор рабочей стратегии NFQWS"
+	echo -e "\t4: Предварительная настройка ZyXel Keenetic (с KeeneticOS 2.x)"
 	echo -e "\t0: Вернуться в главное меню (по умолчанию)"
 	echo ""
 	read -r -p "Ваш выбор:"
@@ -1804,11 +1822,11 @@ function extraMenu
 		echo ""
 		read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
 	elif [ "$REPLY" = "3" ];then
-		zyxelSetup
+		findStrategy
 		echo ""
 		read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
 	elif [ "$REPLY" = "4" ];then
-		findStrategy
+		zyxelSetup
 		echo ""
 		read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
 	else
@@ -1830,9 +1848,13 @@ function mainMenu
 	fi
 	clear
 	headLine "NK для NFQWS-Keenetic"
-	if [ "`ls "$PROFILE_PATH" | grep -c "\-old"`" -gt "0" -o "`ls "$PROFILE_PATH" | grep -c "\-opkg"`" -gt "0" ];then
-		messageBox "Доступна оптимизация профиля"
-		local OPTIMIZATION="1"
+	if [ -d "$PROFILE_PATH" ];then
+		if [ "`ls "$PROFILE_PATH" | grep -c "\-old"`" -gt "0" -o "`ls "$PROFILE_PATH" | grep -c "\-opkg"`" -gt "0" ];	then
+			messageBox "Доступна оптимизация профиля"
+			local OPTIMIZATION="1"
+		else
+			local OPTIMIZATION="0"
+		fi
 	else
 		local OPTIMIZATION="0"
 	fi
