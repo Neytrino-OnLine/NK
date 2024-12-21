@@ -1984,13 +1984,13 @@ case "$1" in
 	opkg update
 	opkg install ca-certificates wget-ssl
 	opkg remove wget-nossl
-	wget -O /tmp/nk.sh https://
-	if [ ! "`cat "/tmp/nk.sh" | grep -c 'function fileSave'`" -gt "0" ];then
-		echo "Ошибка: проблемы со скачиванием файла..."
+	wget -O /tmp/nk.sh https://raw.githubusercontent.com/Neytrino-OnLine/NK/refs/heads/main/nk.sh
+	if [ ! "`cat "/tmp/nk.sh" | grep -c 'function profileOptimize'`" -gt "0" ];then
+		messageBox "Ошибка: проблемы со скачиванием файла."
 	else
 		mv /tmp/nk.sh /opt/bin/nk
 		chmod +x /opt/bin/nk
-		echo "Сейчас установлен: Xvps `cat "/opt/bin/nk" | grep '^VERSION="' | awk '{gsub(/VERSION="/,"")}1' | awk '{gsub(/"/,"")}1'`"
+		echo "Сейчас установлен: NK `cat "/opt/bin/nk" | grep '^VERSION="' | awk '{gsub(/VERSION="/,"")}1' | awk '{gsub(/"/,"")}1'`"
 	fi
 	exit
 	;;
