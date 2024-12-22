@@ -1,10 +1,23 @@
 #!/bin/sh
 
-VERSION="beta 0.3"
+VERSION="beta 0.4"
 PROFILE_PATH='/opt/etc/nfqws'
 BUTTON='/opt/etc/ndm/button.d/nk.sh'
 BACKUP='/opt/backup-nk'
 DNSCRYPT='/opt/etc/dnscrypt-proxy.toml'
+
+function checkForUpdate
+	{
+	local CURENT=`opkg list-installed | grep "^nfqws-keenetic " | awk -F" - " '{print $2}'`
+	local URL=`cat /opt/etc/opkg/nfqws-keenetic.conf | awk '{gsub(/^src\/gz nfqws-keenetic /,"")}1'`
+	wget -q -O /tmp/nfqws.latest $URL
+	local LATEST=`cat /tmp/nfqws.latest | sed  's/<[^>]*>//g' | grep "^nfqws-keenetic_" | awk -F"_" '{print $2}'`
+	if [ ! "$CURENT" = "$LATEST" ];then
+		echo "$LATEST"
+	else
+		echo ""
+	fi
+	}
 
 function fileSave
 	{
@@ -1847,8 +1860,10 @@ function mainMenu
 	clear
 	headLine "NK для NFQWS-Keenetic"
 	if [ -d "$PROFILE_PATH" ];then
-		if [ "`ls "$PROFILE_PATH" | grep -c "\-old"`" -gt "0" -o "`ls "$PROFILE_PATH" | grep -c "\-opkg"`" -gt "0" ];	then
-			messageBox "Доступна оптимизация профиля"
+		if [ -n "$UPDATE" ];then
+			messageBox "Доступно обновление NFQWS-Keenetic до версии: $UPDATE"
+		elif [ "`ls "$PROFILE_PATH" | grep -c "\-old"`" -gt "0" -o "`ls "$PROFILE_PATH" | grep -c "\-opkg"`" -gt "0" ];	then
+			messageBox "Имеется возможность оптимизировать профиль"
 			local OPTIMIZATION="1"
 		else
 			local OPTIMIZATION="0"
@@ -1920,7 +1935,7 @@ function mainMenu
 		mainMenu
 		exit
 	else
-		echo ""
+		echo "░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░"
 		copyRight
 		clear
 		exit
@@ -2061,4 +2076,6 @@ case "$1" in
 	;;
 	
 esac;shift;done
+
+UPDATE=`checkForUpdate`
 mainMenu
