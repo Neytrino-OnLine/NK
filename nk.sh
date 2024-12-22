@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION="beta 0.4"
+VERSION="beta 0.5"
 PROFILE_PATH='/opt/etc/nfqws'
 BUTTON='/opt/etc/ndm/button.d/nk.sh'
 BACKUP='/opt/backup-nk'
@@ -12,6 +12,7 @@ function checkForUpdate
 	local URL=`cat /opt/etc/opkg/nfqws-keenetic.conf | awk '{gsub(/^src\/gz nfqws-keenetic /,"")}1'`
 	wget -q -O /tmp/nfqws.latest $URL
 	local LATEST=`cat /tmp/nfqws.latest | sed  's/<[^>]*>//g' | grep "^nfqws-keenetic_" | awk -F"_" '{print $2}'`
+	rm -rf /tmp/nfqws.latest
 	if [ ! "$CURENT" = "$LATEST" ];then
 		echo "$LATEST"
 	else
