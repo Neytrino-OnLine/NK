@@ -1,10 +1,16 @@
 #!/bin/sh
 
-VERSION="beta 0.5"
+VERSION="beta 0.6"
 PROFILE_PATH='/opt/etc/nfqws'
 BUTTON='/opt/etc/ndm/button.d/nk.sh'
 BACKUP='/opt/backup-nk'
 DNSCRYPT='/opt/etc/dnscrypt-proxy.toml'
+
+function sysConfigGet
+	{
+	local SYS_CONFIG=`ndmc -c 'show version'`
+	ARCH=`echo "$SYS_CONFIG" | grep "arch: " | sed -e 's/^[^[:alpha:]]\+//' | awk -F": " '{print $2}'`
+	}
 
 function checkForUpdate
 	{
@@ -1670,6 +1676,7 @@ function updateNFQWS
 	opkg update
 	opkg upgrade nfqws-keenetic
 	opkg upgrade nfqws-keenetic-web
+	UPDATE=`checkForUpdate`
 	headLine
 	}
 
@@ -1684,6 +1691,8 @@ function installNFQWS
 	{
 	clear
 	headLine "Установка NFQWS-Keenetic"
+	sysConfigGet
+	messageBox "Сейчас, этот сценарий выполняется на архитектуре: $ARCH"
 	echo "Выберите архитектуру:"
 	echo ""
 	echo -e "\t1: mips"
@@ -1946,6 +1955,11 @@ function mainMenu
 echo;while [ -n "$1" ];do
 case "$1" in
 
+-a)	sysConfigGet
+	messageBox "Сейчас, этот сценарий выполняется на архитектуре: $ARCH"
+	exit
+	;;
+
 -A)	MODE="-A"
 	installAarch64
 	exit
@@ -2026,7 +2040,7 @@ case "$1" in
 	else
 		mv /tmp/nk.sh /opt/bin/nk
 		chmod +x /opt/bin/nk
-		echo "Сейчас установлен: NK `cat "/opt/bin/nk" | grep '^VERSION="' | awk '{gsub(/VERSION="/,"")}1' | awk '{gsub(/"/,"")}1'`"
+		messageBox "Сейчас, версия NK: `cat "/opt/bin/nk" | grep '^VERSION="' | awk '{gsub(/VERSION="/,"")}1' | awk '{gsub(/"/,"")}1'`"
 	fi
 	exit
 	;;
@@ -2054,6 +2068,7 @@ case "$1" in
 
 Доступные ключи:
 
+	-a: Отображение архитектуры процессора устройства
 	-A: Установка NFQWS-Keenetic архитектуры aarch64
 	-b: Резервное копирование профиля
 	-B: Настройка кнопок маршрутизатора
