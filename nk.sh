@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION="beta 0.6"
+VERSION="beta 0.7"
 PROFILE_PATH='/opt/etc/nfqws'
 BUTTON='/opt/etc/ndm/button.d/nk.sh'
 BACKUP='/opt/backup-nk'
@@ -10,6 +10,13 @@ function sysConfigGet
 	{
 	local SYS_CONFIG=`ndmc -c 'show version'`
 	ARCH=`echo "$SYS_CONFIG" | grep "arch: " | sed -e 's/^[^[:alpha:]]\+//' | awk -F": " '{print $2}'`
+	if [ "$ARCH" = "mips" ];then
+		local HEXDUMP1=`echo -n I | hexdump -o | awk '{ print substr($2,6,1); exit}'`
+		local HEXDUMP2=`hexdump -s 5 -n 1 -C /opt/bin/busybox | awk -F" " '{print $2}'`
+		if [ "$HEXDUMP1" = "1" -a "$HEXDUMP2" = "01" ];then
+			ARCH=$ARCH'el'
+		fi
+	fi
 	}
 
 function checkForUpdate
@@ -19,62 +26,11 @@ function checkForUpdate
 	wget -q -O /tmp/nfqws.latest $URL
 	local LATEST=`cat /tmp/nfqws.latest | sed  's/<[^>]*>//g' | grep "^nfqws-keenetic_" | awk -F"_" '{print $2}'`
 	rm -rf /tmp/nfqws.latest
-	if [ ! "$CURENT" = "$LATEST" ];then
+	if [ ! "$CURENT" = "$LATEST" -a -n "$CURENT" ];then
 		echo "$LATEST"
 	else
 		echo ""
 	fi
-	}
-
-function fileSave
-	{
-	local FILE_PATH="$1"
-	local CONTENT="$2"
-	if [ -f "$FILE_PATH" ];then
-		local FILE=`basename "$FILE_PATH"`
-		echo ""
-		if [ -n "$CONTENT" ];then
-			echo -e "\tВ: `dirname $FILE_PATH` уже существует файл: $FILE,"
-		else
-			echo -e "\tФайл: $FILE_PATH был перемещён в:"
-		fi
-		local DT=`date +"%C%y.%m.%d_%H-%M-%S"`
-		local BACKUP_PATH="$BACKUP/$DT/"
-		mkdir -p "$BACKUP_PATH"
-		mv "$FILE_PATH" "$BACKUP_PATH$FILE"
-		if [ -f "$BACKUP_PATH$FILE" ];then
-			if [ -n "$CONTENT" ];then
-				echo -e "\tон перемещён в каталог: $BACKUP_PATH"
-			else
-				echo -e "\t$BACKUP_PATH"
-			fi
-		else
-			echo ""
-			echo -e "\tОшибка: не удалось создать резервную копию файла..."
-			echo ""
-			read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
-			exit
-		fi
-	fi
-	if [ -n "$CONTENT" ];then
-		echo -e "$CONTENT" > $FILE_PATH
-		echo ""
-		echo -e "\tФайл: $FILE_PATH - сохранён."
-	fi
-	}
-
-function copyRight
-	{
-	local YEAR="2024"
-	if [ "`date +"%C%y"`" -gt "$YEAR" ];then
-		local YEAR="$YEAR-`date +"%C%y"`"
-	fi
-	local COPYRIGHT="© $YEAR rino Software Lab."
-	local COPY_LONG=`echo ${#COPYRIGHT}`
-	local VER_LONG=`echo ${#VERSION}`
-	local SPACE=`expr 80 - $VER_LONG - $COPY_LONG - 2`
-	local SPACE="`awk -v i=$SPACE 'BEGIN { OFS=" "; $i=" "; print }'`"
-	read -t 1 -n 1 -r -p " $VERSION$SPACE$COPYRIGHT" keypress
 	}
 
 function headLine
@@ -127,104 +83,18 @@ function messageBox
 	fi
 	}
 
-function profileOptimize
+function copyRight
 	{
-	clear
-	headLine "Оптимизация профиля"
-	echo -e "\tВ процессе обновления NFQWS-Keenetic, в профиле накапливаются разные"
-	echo "версии файла настроек, файлов списков и пустые файлы... Данный инструмент"
-	echo "позволит вам упорядочить их содержимое и избавиться от всего лишнего."
-	echo ""
-	echo -e "\tПеред тем как начать процесс - настоятельно рекомендуется"
-	echo "воспользоваться инструментом создания резервной копии профиля, чтобы (в случае"
-	echo "возникновения проблем) - иметь возможность быстро вернуться к предыдущему"
-	echo "состоянию..."
-	echo ""
-	echo "Хотите создать резервную копию профиля?"
-	echo ""
-	echo -e "\t1: Да (создать резервную копию и приступить к оптимизации)"
-	echo -e "\t2: Нет (начать оптимизацию без создания резервной копии)"
-	echo -e "\t0: Отмена (по умолчанию)"
-	echo ""
-	read -r -p "Ваш выбор:"
-	if [ "$REPLY" = "1" ];then
-		backUp "1"
-		listsAndProfileOptimize
-	elif [ "$REPLY" = "2" ];then
-		listsAndProfileOptimize
+	local YEAR="2024"
+	if [ "`date +"%C%y"`" -gt "$YEAR" ];then
+		local YEAR="$YEAR-`date +"%C%y"`"
 	fi
-	}
-
-function listsAndProfileOptimize
-	{
-	clear
-	headLine "Оптимизация списков"
-	if [ "`ls "$PROFILE_PATH" | grep -c "\-old"`" -gt "0" -o "`ls "$PROFILE_PATH" | grep -c "\-opkg"`" -gt "0" ];then
-		echo -e "\tПодождите..."
-		local LISTS=`ls $PROFILE_PATH | grep ".list$" | awk '{gsub(/.list /,".list\n")}1'`
-		local LISTS=`echo -e "$LISTS"`
-		IFS=$'\n'
-		for LINE in $LISTS;do
-			if [ -f "$PROFILE_PATH/$LINE-old" ];then
-				listConfluence "$PROFILE_PATH/$LINE-old" "$PROFILE_PATH/$LINE"
-			fi
-		done
-		for LINE in $LISTS;do
-			if [ -f "$PROFILE_PATH/$LINE-opkg" ];then
-				listConfluence "$PROFILE_PATH/$LINE" "$PROFILE_PATH/$LINE-opkg"
-			fi
-		done
-		if [ -f "$PROFILE_PATH/nfqws.conf-old" ];then
-			configOptimize "$PROFILE_PATH/nfqws.conf-old" "$PROFILE_PATH/nfqws.conf"
-		fi
-		if [ -f "$PROFILE_PATH/nfqws.conf-opkg" ];then
-			configOptimize "$PROFILE_PATH/nfqws.conf" "$PROFILE_PATH/nfqws.conf-opkg"
-		fi
-	else
-		messageBox "Ошибка: объектов для оптимизации - не обнаружено."
-	fi
-	}
-
-function listConfluence
-	{
-	listGet "$1"
-	local CURENT_LIST=`echo -e "$LIST"`
-	listGet "$2"
-	local NEW_LIST=`echo -e "$LIST"`
-	local NEW=""
-	LIST=""
-	IFS=$'\n'
-	for OUT_LINE in $CURENT_LIST;do
-		for IN_LINE in $NEW_LIST;do
-			if [ "$OUT_LINE" = "$IN_LINE" ];then
-				local NEW_LIST=`echo "$NEW_LIST" | grep -v "$IN_LINE"`
-				break
-			fi
-		done
-		if [ -z "$NEW_LIST" ];then
-			break
-		fi
-	done
-	if [ -n "$NEW_LIST" ];then
-		local ADD=`echo -e "$NEW_LIST" | awk '{sub(/^sp@ce/,"")}1'`
-		LIST=`echo -e "$CURENT_LIST" | awk '{sub(/^sp@ce/,"")}1'`
-		LIST=`echo -e "$LIST\n\n$ADD"`
-	else
-		LIST=`echo -e "$CURENT_LIST" | awk '{sub(/^sp@ce/,"")}1'`
-	fi
-	if [ "`echo "$2" | grep -c "$1"`" -gt "0" -a "`echo "$1" | grep -c "$2"`" = "0" ];then
-		fileSave "$1" "$LIST"
-		fileSave "$2" ""
-	else
-		fileSave "$2" "$LIST"
-		fileSave "$1" ""
-	fi
-	}
-
-function listGet
-	{
-	LIST=`cat "$1" | awk '{sub(/^[[:space:]]*$/,"sp@ce")}1'`
-	LIST=`echo -e "$LIST"`
+	local COPYRIGHT="© $YEAR rino Software Lab."
+	local COPY_LONG=`echo ${#COPYRIGHT}`
+	local VER_LONG=`echo ${#VERSION}`
+	local SPACE=`expr 80 - $VER_LONG - $COPY_LONG - 5`
+	local SPACE="`awk -v i=$SPACE 'BEGIN { OFS=" "; $i=" "; print }'`"
+	read -t 1 -n 1 -r -p " NK $VERSION$SPACE$COPYRIGHT" keypress
 	}
 
 function backUp
@@ -326,6 +196,91 @@ function backUp
 				backUp
 			fi
 	fi
+	}
+
+function fileSave
+	{
+	local FILE_PATH="$1"
+	local CONTENT="$2"
+	if [ -f "$FILE_PATH" ];then
+		local FILE=`basename "$FILE_PATH"`
+		echo ""
+		if [ -n "$CONTENT" ];then
+			echo -e "\tВ: `dirname $FILE_PATH` уже существует файл: $FILE,"
+		else
+			echo -e "\tФайл: $FILE_PATH был перемещён в:"
+		fi
+		local DT=`date +"%C%y.%m.%d_%H-%M-%S"`
+		local BACKUP_PATH="$BACKUP/$DT/"
+		mkdir -p "$BACKUP_PATH"
+		mv "$FILE_PATH" "$BACKUP_PATH$FILE"
+		if [ -f "$BACKUP_PATH$FILE" ];then
+			if [ -n "$CONTENT" ];then
+				echo -e "\tон перемещён в каталог: $BACKUP_PATH"
+			else
+				echo -e "\t$BACKUP_PATH"
+			fi
+		else
+			echo ""
+			echo -e "\tОшибка: не удалось создать резервную копию файла..."
+			echo ""
+			read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
+			exit
+		fi
+	fi
+	if [ -n "$CONTENT" ];then
+		echo -e "$CONTENT" > $FILE_PATH
+		echo ""
+		echo -e "\tФайл: $FILE_PATH - сохранён."
+	fi
+	}
+
+function listGet
+	{
+	LIST=`cat "$1" | awk '{sub(/^[[:space:]]*$/,"sp@ce")}1'`
+	LIST=`echo -e "$LIST"`
+	}
+
+function listConfluence
+	{
+	listGet "$1"
+	local CURENT_LIST=`echo -e "$LIST"`
+	listGet "$2"
+	local NEW_LIST=`echo -e "$LIST"`
+	local NEW=""
+	LIST=""
+	IFS=$'\n'
+	for OUT_LINE in $CURENT_LIST;do
+		for IN_LINE in $NEW_LIST;do
+			if [ "$OUT_LINE" = "$IN_LINE" ];then
+				local NEW_LIST=`echo "$NEW_LIST" | grep -v "$IN_LINE"`
+				break
+			fi
+		done
+		if [ -z "$NEW_LIST" ];then
+			break
+		fi
+	done
+	if [ -n "$NEW_LIST" ];then
+		local ADD=`echo -e "$NEW_LIST" | awk '{sub(/^sp@ce/,"")}1'`
+		LIST=`echo -e "$CURENT_LIST" | awk '{sub(/^sp@ce/,"")}1'`
+		LIST=`echo -e "$LIST\n\n$ADD"`
+	else
+		LIST=`echo -e "$CURENT_LIST" | awk '{sub(/^sp@ce/,"")}1'`
+	fi
+	if [ "`echo "$2" | grep -c "$1"`" -gt "0" -a "`echo "$1" | grep -c "$2"`" = "0" ];then
+		fileSave "$1" "$LIST"
+		fileSave "$2" ""
+	else
+		fileSave "$2" "$LIST"
+		fileSave "$1" ""
+	fi
+	}
+
+function configGet
+	{
+	CONFIG=`cat "$1" | awk '{sub(/^[[:space:]]*$/,"sp@ce")}1'`
+	CONFIG=`echo -e "$CONFIG"`
 	}
 
 function configOptimize
@@ -577,10 +532,62 @@ function configsConfluence
 	fi
 	}
 
-function configGet
+function listsAndProfileOptimize
 	{
-	CONFIG=`cat "$1" | awk '{sub(/^[[:space:]]*$/,"sp@ce")}1'`
-	CONFIG=`echo -e "$CONFIG"`
+	clear
+	headLine "Оптимизация списков"
+	if [ "`ls "$PROFILE_PATH" | grep -c "\-old"`" -gt "0" -o "`ls "$PROFILE_PATH" | grep -c "\-opkg"`" -gt "0" ];then
+		echo -e "\tПодождите..."
+		local LISTS=`ls $PROFILE_PATH | grep ".list$" | awk '{gsub(/.list /,".list\n")}1'`
+		local LISTS=`echo -e "$LISTS"`
+		IFS=$'\n'
+		for LINE in $LISTS;do
+			if [ -f "$PROFILE_PATH/$LINE-old" ];then
+				listConfluence "$PROFILE_PATH/$LINE-old" "$PROFILE_PATH/$LINE"
+			fi
+		done
+		for LINE in $LISTS;do
+			if [ -f "$PROFILE_PATH/$LINE-opkg" ];then
+				listConfluence "$PROFILE_PATH/$LINE" "$PROFILE_PATH/$LINE-opkg"
+			fi
+		done
+		if [ -f "$PROFILE_PATH/nfqws.conf-old" ];then
+			configOptimize "$PROFILE_PATH/nfqws.conf-old" "$PROFILE_PATH/nfqws.conf"
+		fi
+		if [ -f "$PROFILE_PATH/nfqws.conf-opkg" ];then
+			configOptimize "$PROFILE_PATH/nfqws.conf" "$PROFILE_PATH/nfqws.conf-opkg"
+		fi
+	else
+		messageBox "Ошибка: объектов для оптимизации - не обнаружено."
+	fi
+	}
+
+function profileOptimize
+	{
+	clear
+	headLine "Оптимизация профиля"
+	echo -e "\tВ процессе обновления NFQWS-Keenetic, в профиле накапливаются разные"
+	echo "версии файла настроек, файлов списков и пустые файлы... Данный инструмент"
+	echo "позволит вам упорядочить их содержимое и избавиться от всего лишнего."
+	echo ""
+	echo -e "\tПеред тем как начать процесс - настоятельно рекомендуется"
+	echo "воспользоваться инструментом создания резервной копии профиля, чтобы (в случае"
+	echo "возникновения проблем) - иметь возможность быстро вернуться к предыдущему"
+	echo "состоянию..."
+	echo ""
+	echo "Хотите создать резервную копию профиля?"
+	echo ""
+	echo -e "\t1: Да (создать резервную копию и приступить к оптимизации)"
+	echo -e "\t2: Нет (начать оптимизацию без создания резервной копии)"
+	echo -e "\t0: Отмена (по умолчанию)"
+	echo ""
+	read -r -p "Ваш выбор:"
+	if [ "$REPLY" = "1" ];then
+		backUp "1"
+		listsAndProfileOptimize
+	elif [ "$REPLY" = "2" ];then
+		listsAndProfileOptimize
+	fi
 	}
 
 function ispInterfaceEdit
@@ -771,71 +778,6 @@ function udpEdit
 	fi
 	}
 
-function ipv6Switch
-	{
-	clear
-	headLine "Обработка IPv6"
-	echo "Выберите один из вариантов:"
-	echo ""
-	echo -e "\t1: Обрабатывать"
-	echo -e "\t0: Не обрабатывать (по умолчанию)"
-	echo ""
-	read -r -p "Ваш выбор:"
-	if [ "$REPLY" = "1" ];then
-		local PARAM="1"
-	else
-		local PARAM="0"
-	fi
-	local EDIT=""
-	local CHANGE="0"
-	#CONFIG=`echo "$CONFIG" | awk '{sub(/^NFQWS_EXTRA_ARGS=/,"#NFQWS_EXTRA_ARGS=")}1'`
-	IFS=$'\n'
-	for LINE in $CONFIG;do
-		if [ "`echo "$LINE" | grep -c "^IPV6_ENABLED="`" -gt "0" ];then
-			EDIT=$EDIT'IPV6_ENABLED='$PARAM'\n'
-			local CHANGE="1"
-		else
-			EDIT=$EDIT$LINE'\n'
-		fi
-	done
-	CONFIG=`echo -e $EDIT`
-	if [ "$CHANGE" -gt "0" ];then
-		CHANGES=`expr $CHANGES + 1`
-	fi
-	}
-
-function logSwitch
-	{
-	clear
-	headLine "Режим вывода данных в Syslog"
-	echo "Выберите один из вариантов:"
-	echo ""
-	echo -e "\t1: debug"
-	echo -e "\t0: silent (по умолчанию)"
-	echo ""
-	read -r -p "Ваш выбор:"
-	if [ "$REPLY" = "1" ];then
-		local PARAM="1"
-	else
-		local PARAM="0"
-	fi
-	local EDIT=""
-	local CHANGE="0"
-	IFS=$'\n'
-	for LINE in $CONFIG;do
-		if [ "`echo "$LINE" | grep -c "^LOG_LEVEL="`" -gt "0" ];then
-			EDIT=$EDIT'LOG_LEVEL='$PARAM'\n'
-			local CHANGE="1"
-		else
-			EDIT=$EDIT$LINE'\n'
-		fi
-	done
-	CONFIG=`echo -e $EDIT`
-	if [ "$CHANGE" -gt "0" ];then
-		CHANGES=`expr $CHANGES + 1`
-	fi
-	}
-
 function tcpPortsEdit
 	{
 	clear
@@ -1017,6 +959,71 @@ function modeSwitch
 		elif [ "`echo "$LINE" | grep -c '^#NFQWS_EXTRA_ARGS='`" -gt "0" -a "$FLAG" = "1" ];then
 			EDIT=$EDIT`echo "$LINE" | awk '{sub(/^#NFQWS_EXTRA_ARGS=/,"NFQWS_EXTRA_ARGS=")}1'`'\n'
 			local FLAG="0"
+			local CHANGE="1"
+		else
+			EDIT=$EDIT$LINE'\n'
+		fi
+	done
+	CONFIG=`echo -e $EDIT`
+	if [ "$CHANGE" -gt "0" ];then
+		CHANGES=`expr $CHANGES + 1`
+	fi
+	}
+
+function ipv6Switch
+	{
+	clear
+	headLine "Обработка IPv6"
+	echo "Выберите один из вариантов:"
+	echo ""
+	echo -e "\t1: Обрабатывать"
+	echo -e "\t0: Не обрабатывать (по умолчанию)"
+	echo ""
+	read -r -p "Ваш выбор:"
+	if [ "$REPLY" = "1" ];then
+		local PARAM="1"
+	else
+		local PARAM="0"
+	fi
+	local EDIT=""
+	local CHANGE="0"
+	#CONFIG=`echo "$CONFIG" | awk '{sub(/^NFQWS_EXTRA_ARGS=/,"#NFQWS_EXTRA_ARGS=")}1'`
+	IFS=$'\n'
+	for LINE in $CONFIG;do
+		if [ "`echo "$LINE" | grep -c "^IPV6_ENABLED="`" -gt "0" ];then
+			EDIT=$EDIT'IPV6_ENABLED='$PARAM'\n'
+			local CHANGE="1"
+		else
+			EDIT=$EDIT$LINE'\n'
+		fi
+	done
+	CONFIG=`echo -e $EDIT`
+	if [ "$CHANGE" -gt "0" ];then
+		CHANGES=`expr $CHANGES + 1`
+	fi
+	}
+
+function logSwitch
+	{
+	clear
+	headLine "Режим вывода данных в Syslog"
+	echo "Выберите один из вариантов:"
+	echo ""
+	echo -e "\t1: debug"
+	echo -e "\t0: silent (по умолчанию)"
+	echo ""
+	read -r -p "Ваш выбор:"
+	if [ "$REPLY" = "1" ];then
+		local PARAM="1"
+	else
+		local PARAM="0"
+	fi
+	local EDIT=""
+	local CHANGE="0"
+	IFS=$'\n'
+	for LINE in $CONFIG;do
+		if [ "`echo "$LINE" | grep -c "^LOG_LEVEL="`" -gt "0" ];then
+			EDIT=$EDIT'LOG_LEVEL='$PARAM'\n'
 			local CHANGE="1"
 		else
 			EDIT=$EDIT$LINE'\n'
@@ -1302,11 +1309,163 @@ function statusNFQWS
 	headLine
 	}
 
+function preInstall
+	{
+	opkg update
+	opkg install ca-certificates wget-ssl
+	opkg remove wget-nossl
+	mkdir -p /opt/etc/opkg
+	}
+
+function nfqwsInstall
+	{
+	opkg update
+	opkg install nfqws-keenetic
+	headLine
+	}
+
+function installMips
+	{
+	clear
+	headLine "Установка NFQWS-Keenetic (архитектуры mips)" "1"
+	preInstall
+	echo "src/gz nfqws-keenetic https://anonym-tsk.github.io/nfqws-keenetic/mips" > /opt/etc/opkg/nfqws-keenetic.conf
+	nfqwsInstall
+	}
+
+function installMipsel
+	{
+	clear
+	headLine "Установка NFQWS-Keenetic (архитектуры mipsel)" "1"
+	preInstall
+	echo "src/gz nfqws-keenetic https://anonym-tsk.github.io/nfqws-keenetic/mipsel" > /opt/etc/opkg/nfqws-keenetic.conf
+	nfqwsInstall
+	}
+
+function installAarch64
+	{
+	clear
+	headLine "Установка NFQWS-Keenetic (архитектуры aarch64" "1"
+	preInstall
+	echo "src/gz nfqws-keenetic https://anonym-tsk.github.io/nfqws-keenetic/aarch64" > /opt/etc/opkg/nfqws-keenetic.conf
+	nfqwsInstall
+	}
+
+function installUniversal
+	{
+	clear
+	headLine "Установка NFQWS-Keenetic (универсальный установщик)" "1"
+	preInstall
+	echo "src/gz nfqws-keenetic https://anonym-tsk.github.io/nfqws-keenetic/all" > /opt/etc/opkg/nfqws-keenetic.conf
+	nfqwsInstall
+	}
+
+function installWeb
+	{
+	clear
+	headLine "Установка WEB-интерфейса NFQWS-Keenetic" "1"
+	opkg install nfqws-keenetic-web
+	headLine
+	echo ""
+	echo -e "\tЕсли WEB-интерфейс не открывается, возможно требуется перезагрузить маршрутизатор..."
+	echo ""
+	echo "Хотите выполнить перезагрузку?"
+	echo ""
+	echo -e "1: Да"
+	echo -e "0: Нет (по умолчанию)"
+	echo ""
+	read -r -p "Ваш выбор:"
+	if [ "$REPLY" = "1" ];then
+		ndmc -c 'system reboot'
+	fi
+	}
+
+function updateNFQWS
+	{
+	headLine "Обновление NFQWS-Keenetic" "1"
+	opkg update
+	opkg upgrade nfqws-keenetic
+	opkg upgrade nfqws-keenetic-web
+	UPDATE=`checkForUpdate`
+	headLine
+	}
+
+function uninstallNFQWS
+	{
+	headLine "Удаление NFQWS-Keenetic" "1"
+	opkg remove --autoremove nfqws-keenetic-web nfqws-keenetic
+	headLine
+	}
+
+function installNFQWS
+	{
+	clear
+	headLine "Установка NFQWS-Keenetic"
+	sysConfigGet
+	messageBox "Сейчас, этот сценарий выполняется на архитектуре: $ARCH"
+	echo "Выберите архитектуру:"
+	echo ""
+	echo -e "\t1: mips"
+	echo -e "\t2: mipsel"
+	echo -e "\t3: aarch64"
+	echo -e "\t4: Универсальный установщик"
+	echo -e "\t0: Отмена (по умолчанию)"
+	echo ""
+	read -r -p "Ваш выбор:"
+	if [ "$REPLY" = "1" ];then
+		installMips
+		echo ""
+		read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
+		installMenu
+		exit
+	elif [ "$REPLY" = "2" ];then
+		installMipsel
+		echo ""
+		read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
+		installMenu
+		exit
+	elif [ "$REPLY" = "3" ];then
+		installAarch64
+		echo ""
+		read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
+		installMenu
+		exit
+	elif [ "$REPLY" = "4" ];then
+		installUniversal
+		echo ""
+		read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
+		installMenu
+		exit
+	else
+		installMenu
+		exit
+	fi
+	}
+
 function infoNFQWS
 	{
 	headLine "opkg info nfqws-keenetic" "1"
 	opkg info nfqws-keenetic
 	headLine
+	}
+
+function findStrategy
+	{
+	clear
+	headLine "Подбор рабочей стратегии NFQWS"
+	echo -e "\tДля поиска рабочей стратегии - запустите скрипт и следуйте инструкциям."
+	echo "Подробнее о его работе - можно почитать здесь:"
+	messageBox "https://clck.ru/3F84AQ" "1"
+	echo "         (Используйте: Ctrl+Shift+C для копирования выделенного текста)"
+	echo ""
+	echo -e "\t1: Запустить скрипт"
+	echo -e "\t0: Отмена (по умолчанию)"
+	echo ""
+	read -r -p "Ваш выбор:"
+	if [ "$REPLY" = "1" ];then
+		opkg install curl
+		/bin/sh -c "$(curl -fsSL https://github.com/Anonym-tsk/nfqws-keenetic/raw/master/common/strategy.sh)"
+	fi
 	}
 
 function zyxelSetupBegining
@@ -1599,139 +1758,6 @@ function buttonMenu
 	fi
 	}
 
-function preInstall
-	{
-	opkg update
-	opkg install ca-certificates wget-ssl
-	opkg remove wget-nossl
-	mkdir -p /opt/etc/opkg
-	}
-
-function nfqwsInstall
-	{
-	opkg update
-	opkg install nfqws-keenetic
-	headLine
-	}
-
-function installMips
-	{
-	clear
-	headLine "Установка NFQWS-Keenetic (архитектуры mips)" "1"
-	preInstall
-	echo "src/gz nfqws-keenetic https://anonym-tsk.github.io/nfqws-keenetic/mips" > /opt/etc/opkg/nfqws-keenetic.conf
-	nfqwsInstall
-	}
-
-function installMipsel
-	{
-	clear
-	headLine "Установка NFQWS-Keenetic (архитектуры mipsel)" "1"
-	preInstall
-	echo "src/gz nfqws-keenetic https://anonym-tsk.github.io/nfqws-keenetic/mipsel" > /opt/etc/opkg/nfqws-keenetic.conf
-	nfqwsInstall
-	}
-
-function installAarch64
-	{
-	clear
-	headLine "Установка NFQWS-Keenetic (архитектуры aarch64" "1"
-	preInstall
-	echo "src/gz nfqws-keenetic https://anonym-tsk.github.io/nfqws-keenetic/aarch64" > /opt/etc/opkg/nfqws-keenetic.conf
-	nfqwsInstall
-	}
-
-function installUniversal
-	{
-	clear
-	headLine "Установка NFQWS-Keenetic (универсальный установщик)" "1"
-	preInstall
-	echo "src/gz nfqws-keenetic https://anonym-tsk.github.io/nfqws-keenetic/all" > /opt/etc/opkg/nfqws-keenetic.conf
-	nfqwsInstall
-	}
-
-function installWeb
-	{
-	clear
-	headLine "Установка WEB-интерфейса NFQWS-Keenetic" "1"
-	opkg install nfqws-keenetic-web
-	headLine
-	echo ""
-	echo -e "\tЕсли WEB-интерфейс не открывается, возможно требуется перезагрузить маршрутизатор..."
-	echo ""
-	echo "Хотите выполнить перезагрузку?"
-	echo ""
-	echo -e "1: Да"
-	echo -e "0: Нет (по умолчанию)"
-	echo ""
-	read -r -p "Ваш выбор:"
-	if [ "$REPLY" = "1" ];then
-		ndmc -c 'system reboot'
-	fi
-	}
-
-function updateNFQWS
-	{
-	headLine "Обновление NFQWS-Keenetic" "1"
-	opkg update
-	opkg upgrade nfqws-keenetic
-	opkg upgrade nfqws-keenetic-web
-	UPDATE=`checkForUpdate`
-	headLine
-	}
-
-function uninstallNFQWS
-	{
-	headLine "Удаление NFQWS-Keenetic" "1"
-	opkg remove --autoremove nfqws-keenetic-web nfqws-keenetic
-	headLine
-	}
-
-function installNFQWS
-	{
-	clear
-	headLine "Установка NFQWS-Keenetic"
-	sysConfigGet
-	messageBox "Сейчас, этот сценарий выполняется на архитектуре: $ARCH"
-	echo "Выберите архитектуру:"
-	echo ""
-	echo -e "\t1: mips"
-	echo -e "\t2: mipsel"
-	echo -e "\t3: aarch64"
-	echo -e "\t4: Универсальный установщик"
-	echo -e "\t0: Отмена (по умолчанию)"
-	echo ""
-	read -r -p "Ваш выбор:"
-	if [ "$REPLY" = "1" ];then
-		installMips
-		echo ""
-		read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
-		installMenu
-		exit
-	elif [ "$REPLY" = "2" ];then
-		installMipsel
-		echo ""
-		read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
-		installMenu
-		exit
-	elif [ "$REPLY" = "3" ];then
-		installAarch64
-		echo ""
-		read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
-		installMenu
-		exit
-	elif [ "$REPLY" = "4" ];then
-		installUniversal
-		echo ""
-		read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
-		installMenu
-		exit
-	else
-		installMenu
-		exit
-	fi
-	}
-
 function installMenu
 	{
 	if [  "`opkg list-installed | grep -c "nfqws-keenetic"`" -gt "1" ];then
@@ -1797,25 +1823,6 @@ function installMenu
 	else
 		mainMenu
 		exit
-	fi
-	}
-
-function findStrategy
-	{
-	clear
-	headLine "Подбор рабочей стратегии NFQWS"
-	echo -e "\tДля поиска рабочей стратегии - запустите скрипт и следуйте инструкциям."
-	echo "Подробнее о его работе - можно почитать здесь:"
-	messageBox "https://clck.ru/3F84AQ" "1"
-	echo "         (Используйте: Ctrl+Shift+C для копирования выделенного текста)"
-	echo ""
-	echo -e "\t1: Запустить скрипт"
-	echo -e "\t0: Отмена (по умолчанию)"
-	echo ""
-	read -r -p "Ваш выбор:"
-	if [ "$REPLY" = "1" ];then
-		opkg install curl
-		/bin/sh -c "$(curl -fsSL https://github.com/Anonym-tsk/nfqws-keenetic/raw/master/common/strategy.sh)"
 	fi
 	}
 
@@ -2064,34 +2071,22 @@ case "$1" in
 	exit
 	;;
 
-*) 	echo "Ошибка: введён некорректный ключ.
+*) 	messageBox "Ошибка: введён некорректный ключ." "1"
+	echo "Доступные ключи:
 
-Доступные ключи:
-
-	-a: Отображение архитектуры процессора устройства
-	-A: Установка NFQWS-Keenetic архитектуры aarch64
-	-b: Резервное копирование профиля
-	-B: Настройка кнопок маршрутизатора
-	-с: Редактор конфигурации
-	-i: Информация о пакете 
-	-I: Универсальный установщик NFQWS-Keenetic
-	-l: Редактор списков
-	-m: Установка NFQWS-Keenetic архитектуры mips
-	-M: Установка NFQWS-Keenetic архитектуры mipsel
-	-o: Оптимизация профиля
-	-r: Перезапуск службы
-	-R: Удаление NFQWS-Keenetic
-	-s: Остановка службы
-	-S: Запуск службы
-	-u: Обновление NK
-	-U: Обновление NFQWS-Keenetic
-	-v: Отображение текущей версии NK
-	-W: Установка Web-интерфейса
-	-z: Предварительная настройка ZyXel Keenetic (с KeeneticOS 2.x)"
+	-a: Архитектура процессора		-A: Установка пакета aarch64
+	-b: Резервное копирование		-B: Настройка кнопок
+	-с: Редактор конфигурации		-i: Информация о пакете 
+	-I: Установка универсального пакета	-l: Редактор списков
+	-m: Установка пакета mips		-M: Установка пакета mipsel
+	-o: Оптимизация профиля			-r: Перезапуск службы
+	-R: Удаление пакета			-s: Остановка службы
+	-S: Запуск службы			-u: Обновление NK
+	-U: Обновление пакета			-v: Текущая версия NK
+	-W: Установка Web-интерфейса		-z: Настройка ZyXel Keenetic"
 	exit
 	;;
 	
 esac;shift;done
-
 UPDATE=`checkForUpdate`
 mainMenu
