@@ -1768,7 +1768,7 @@ function installMenu
 		local NFQWS="0"
 	fi
 	clear
-	headLine "Установка/удаление"
+	headLine "Установка/обновление/удаление"
 	echo "Доступные действия:"
 	echo ""
 	if [ "$NFQWS" = "0" ];then
