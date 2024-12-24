@@ -114,3 +114,25 @@ nk
 И нажимаем ввод.
 
 ![Screenshot](screenshots/nk-02.png)
+
+## Давайте установим NFQWS-Keenetic
+
+Выбираем "8: Установка/обновление/удаление"
+
+![Screenshot](screenshots/nk-03.png)
+
+Выбираем "1: Установить NFQWS-Keenetic"
+
+![Screenshot](screenshots/nk-04.png)
+
+Выбираем архитектуру (или "4: Универсальный установщик")
+
+<details><summary>Будет выполнена установка пакета "NFQWS-Keenetic"...</summary>
+ 
+![Screenshot](screenshots/nk-05.png)
+ 
+</details>
+
+По итогам установки, число доступных действий (в NK) - существенно увеличивается...
+
+![Screenshot](screenshots/nk-06.png)
