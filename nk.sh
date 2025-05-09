@@ -2403,7 +2403,7 @@ function mainMenu
 	showOption "\t6: Оптимизация профиля" "$STATE3"
 	showOption "\t7: Редактор списков" "$STATE1"
 	echo -e "\t8: Управление пакетом"
-	echo -e "\t9: Дополнительно..."
+	echo -e "\t9: Дополнительно"
 	echo -e "\t0: Выход (по умолчанию)"
 	echo ""
 	read -r -p "Ваш выбор:"
