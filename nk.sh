@@ -1011,11 +1011,11 @@ function ipv6Switch
 		local NEW=""
 		local SAVE=""
 		if [ "$VALUE" = "1" ];then
-			messageBox "Текущее значение: обрабатывать"
+			messageBox "Текущее значение: Обрабатывать"
 			local STATE1="block"
 			local STATE2=""
 		else
-			messageBox "Текущее значение: не обрабатывать"
+			messageBox "Текущее значение: Не обрабатывать"
 			local STATE1=""
 			local STATE2="block"
 		fi
@@ -1179,7 +1179,7 @@ function restartDialogue
 	echo "Перезапустить службу?"
 	echo ""
 	echo -e "\t1: Да"
-	echo -e "\t0 Нет (по умолчанию)"
+	echo -e "\t0: Нет (по умолчанию)"
 	echo ""
 	read -r -p "Ваш выбор:"
 	echo ""
@@ -1306,7 +1306,7 @@ function listsGet
 			echo ""
 		fi
 	done
-	echo -e "\t0: отмена (по умолчанию)"
+	echo -e "\t0: Отмена (по умолчанию)"
 	echo ""
 	read -r -p "Введите номер списка:"
 	echo ""
@@ -1389,7 +1389,7 @@ function itemDelete
 				listAction
 			fi
 		else
-			messageBox "Совпадений не найдено"
+			messageBox "Совпадений не найдено."
 			echo ""
 			read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
 			itemDelete
@@ -1406,15 +1406,15 @@ function listAction
 		if [ -n "$EDIT" ];then
 			echo -e "$EDIT" | awk -F"\n" '{print "\t"$1}'
 		else
-			messageBox "Список пуст"
+			messageBox "Список пуст."
 		fi	
 		headLine
 		echo ""
 		echo "Доступные действия:"
 		echo ""
 		echo -e "\t1: Сохранить"
-		echo -e "\t2: Добавить записи"
-		echo -e "\t3: Удалить записи"
+		echo -e "\t2: Добавить элементы"
+		echo -e "\t3: Удалить элементы"
 		echo -e "\t4: Очистить список"
 		echo -e "\t0: Отмена (по умолчанию)"
 		echo ""
@@ -1422,7 +1422,7 @@ function listAction
 		echo ""
 		if [ "$REPLY" = "1" ];then
 			fileSave "$PROFILE_PATH/$FILE_NAME" "$EDIT"
-			srestartDialogue
+			restartDialogue
 		elif [ "$REPLY" = "2" ];then
 			showText "\tВы можете добавлять строку за строкой... Для завершения процесса добавления - нажмите ввод (оставив поле пустым)."
 			echo ""
@@ -1562,7 +1562,7 @@ function nfqwsInstall	#1 - пропустить диалог демонстра�
 	headLine "Установка NFQWS-Keenetic"
 	echo "Установка пакета..."
 	echo ""
-	messageBox "Пакет - установлен"
+	messageBox "Пакет - установлен."
 	echo ""
 	if [ -z "$1" ];then
 		echo "Хотите просмотреть лог?"
@@ -1718,7 +1718,7 @@ function uninstallNFQWS
 		if [ -z "`opkg list-installed | grep "nfqws-keenetic"`" ];then
 			messageBox "Пакет - удалён."
 		else
-			messageBox "Не удалось удалить пакет."
+			messageBox "Не удалось удалить пакет." "\033[91m"
 		fi
 		echo ""
 		echo "Хотите просмотреть лог?"
@@ -1986,7 +1986,7 @@ function policySetup
 		else
 			local MODE="режим исключений"
 		fi
-		messageBox "Политика: $POLICY_NAME, $MODE."
+		messageBox "Политика: $POLICY_NAME ($MODE)"
 		local STATE=""
 	else
 		messageBox "Политика доступа - не настроена."
@@ -2232,7 +2232,7 @@ function installMenu
 		if [ -z "$STATE1" ];then
 			installNFQWS
 		else
-			messageBox "Пакет NFQWS-keenetic - уже установлен" "\033[91m"
+			messageBox "Пакет NFQWS-keenetic - уже установлен." "\033[91m"
 			echo ""
 			read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
 		fi
@@ -2241,7 +2241,7 @@ function installMenu
 		if [ -z "$STATE2" ];then
 			installWeb
 		else
-			messageBox "WEB-интерфейс - уже установлен" "\033[91m"
+			messageBox "WEB-интерфейс - уже установлен." "\033[91m"
 			echo ""
 			read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
 		fi
@@ -2259,7 +2259,7 @@ function installMenu
 		if [ -z "$STATE3" ];then
 			infoNFQWS
 		else
-			messageBox "Пакет NFQWS-keenetic - отсутствует" "\033[91m"
+			messageBox "Пакет NFQWS-keenetic - отсутствует." "\033[91m"
 			echo ""
 			read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
 		fi
@@ -2268,7 +2268,7 @@ function installMenu
 		if [ -z "$STATE3" ];then
 			uninstallNFQWS
 		else
-			messageBox "Пакет NFQWS-keenetic - отсутствует" "\033[91m"
+			messageBox "Пакет NFQWS-keenetic - отсутствует." "\033[91m"
 			echo ""
 			read -n 1 -r -p "(Чтобы продолжить - нажмите любую клавишу...)" keypress
 		fi
@@ -2378,7 +2378,7 @@ function mainMenu
 			local STATE2=""
 			local STATE3="block"
 		elif [ -n "`ls "$PROFILE_PATH" | grep "\-old"`" -a -z "$STATE1" -o -n "`ls "$PROFILE_PATH" | grep "\-opkg"`" -a -z "$STATE1" ];	then
-			messageBox "Можно оптимизировать профиль..."
+			messageBox "Можно оптимизировать профиль."
 			echo ""
 			local STATE2="block"
 			local STATE3=""
@@ -2546,7 +2546,7 @@ echo;while [ -n "$1" ];do
 case "$1" in
 
 -a)	sysConfigGet
-	messageBox "Сейчас, этот сценарий выполняется на архитектуре: $ARCH"
+	messageBox "Текущая архитектура: $ARCH"
 	exit
 	;;
 
@@ -2608,6 +2608,11 @@ case "$1" in
 	;;
 
 -p)	MODE="-p"
+	mainMenu
+	exit
+	;;
+
+-P)	MODE="-P"
 	policySetup
 	exit
 	;;
@@ -2693,7 +2698,7 @@ case "$1" in
 	-i: Информация о пакете $SEPARATE-I: Установка универсального пакета
 	-l: Редактор списков	$SEPARATE-m: Установка пакета mips
 	-M: Установка пакета mipsel$SEPARATE-o: Оптимизация профиля
-	-p: Без проверки обновлений$SEPARATE-p: Политика доступа
+	-p: Без проверки обновлений$SEPARATE-P: Политика доступа
 	-r: Перезапуск службы	$SEPARATE-R: Удаление пакета
 	-s: Остановка службы	$SEPARATE-S: Запуск службы
 	-u: Обновление NK	$SEPARATE-U: Обновление пакета
