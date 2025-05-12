@@ -113,27 +113,23 @@ function messageBox	#1 - текст	#2 - цвет
 
 function showText	#1 - текст	#2 - цвет
 	{
-	local INPUT_TEXT=`echo "$1" | awk '{gsub(/\\\t/,"____")}1'`
-	local INPUT_TEXT=`echo -e "$INPUT_TEXT"`
+	local TEXT=`echo "$1" | awk '{gsub(/\\\t/,"____")}1'`
+	local TEXT=`echo -e "$TEXT"`
 	local STRING=""
 	local SPACE=""
 	IFS=$' '
-	for WORD in $INPUT_TEXT;do
+	for WORD in $TEXT;do
 			local WORD_LONG=`echo ${#WORD}`
 			local STRING_LONG=`echo ${#STRING}`
 			if [ "`expr $WORD_LONG + $STRING_LONG + 1`" -gt "$COLUNS" ];then
 				echo -e "$2$STRING\033[39m\033[49m" | awk '{gsub(/____/,"    ")}1'
 				local STRING=$WORD
-				local END=""
 			else
 				local STRING=$STRING$SPACE$WORD
 				local SPACE=" "
-				local END="show"
 			fi
 	done
-	if [ -n "$END" ];then
-		echo -e "$2$STRING\033[39m\033[49m" | awk '{gsub(/____/,"    ")}1'
-	fi
+	echo -e "$2$STRING\033[39m\033[49m" | awk '{gsub(/____/,"    ")}1'
 	}
 
 function showCentered	#1 - текст	#2 - цвет
