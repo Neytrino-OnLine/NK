@@ -1,6 +1,7 @@
 #!/bin/sh
 
 VERSION="beta 2"
+BUILD="0000.1"
 PROFILE_PATH='/opt/etc/nfqws'
 BUTTON='/opt/etc/ndm/button.d/nk.sh'
 BACKUP='/opt/backup-nk'
@@ -2636,18 +2637,18 @@ case "$1" in
 -u)	SCRIPT_NAME="NK"
 	headLine "Обновление $SCRIPT_NAME"
 	FILE_NAME="`echo "$SCRIPT_NAME" | tr '[:upper:]' '[:lower:]'`"
-	if [ -f "/opt/_install/$FILE_NAME.sh" ];then
+	if [ -f "/opt/_update/$FILE_NAME.sh" ];then
 		echo "Локальное обновление..."
 		echo ""
-		mv /opt/_install/$FILE_NAME.sh /opt/bin/$FILE_NAME
-		rm -rf /opt/_install/
+		mv /opt/_update/$FILE_NAME.sh /opt/bin/$FILE_NAME
+		rm -rf /opt/_update/
 	else
 		echo "Обновление..."
 		echo ""
 		echo "`opkg update`" > /dev/null
 		echo "`opkg install ca-certificates wget-ssl`" > /dev/null
 		echo "`opkg remove wget-nossl`" > /dev/null
-		wget -q -O /tmp/$FILE_NAME.sh https://raw.githubusercontent.com/Neytrino-OnLine/NK/refs/heads/main/nk.sh
+		wget -q -O /tmp/$FILE_NAME.sh https://raw.githubusercontent.com/Neytrino-OnLine/ipsh/refs/heads/main/ipsh.sh
 		if [ ! -n "`cat "/tmp/$FILE_NAME.sh" | grep 'function copyRight'`" ];then
 			messageBox "Не удалось загрузить файл." "\033[91m"
 			exit
@@ -2656,7 +2657,7 @@ case "$1" in
 		fi
 	fi
 	chmod +x /opt/bin/$FILE_NAME
-	messageBox "Сейчас, версия $SCRIPT_NAME: `cat "/opt/bin/$FILE_NAME" | grep '^VERSION="' | awk -F"=" '{print $2}' | awk '{gsub(/"/,"")}1'`"
+	messageBox "$SCRIPT_NAME обновлён до версии: `cat "/opt/bin/$FILE_NAME" | grep '^VERSION="' | awk -F"=" '{print $2}' | awk '{gsub(/"/,"")}1'` build `cat "/opt/bin/$FILE_NAME" | grep '^BUILD="' | awk -F'"' '{print $2}'`"
 	exit
 	;;
 
@@ -2665,7 +2666,7 @@ case "$1" in
 	exit
 	;;
 
--v)	echo " $VERSION"
+-v)	echo "$0 $VERSION build $BUILD"
 	exit
 	;;
 
