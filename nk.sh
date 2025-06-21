@@ -2648,7 +2648,7 @@ case "$1" in
 		echo "`opkg update`" > /dev/null
 		echo "`opkg install ca-certificates wget-ssl`" > /dev/null
 		echo "`opkg remove wget-nossl`" > /dev/null
-		wget -q -O /tmp/$FILE_NAME.sh https://raw.githubusercontent.com/Neytrino-OnLine/ipsh/refs/heads/main/ipsh.sh
+		wget -q -O /tmp/$FILE_NAME.sh https://raw.githubusercontent.com/Neytrino-OnLine/NK/refs/heads/main/nk.sh
 		if [ ! -n "`cat "/tmp/$FILE_NAME.sh" | grep 'function copyRight'`" ];then
 			messageBox "Не удалось загрузить файл." "\033[91m"
 			exit
