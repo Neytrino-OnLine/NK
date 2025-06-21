@@ -2657,7 +2657,7 @@ case "$1" in
 		fi
 	fi
 	chmod +x /opt/bin/$FILE_NAME
-	messageBox "$SCRIPT_NAME обновлён до версии: `cat "/opt/bin/$FILE_NAME" | grep '^VERSION="' | awk -F"=" '{print $2}' | awk '{gsub(/"/,"")}1'` build `cat "/opt/bin/$FILE_NAME" | grep '^BUILD="' | awk -F'"' '{print $2}'`"
+	messageBox "$SCRIPT_NAME обновлён до версии: `cat "/opt/bin/$FILE_NAME" | grep '^VERSION=' | awk -F'"' '{print $2}'` build `cat "/opt/bin/$FILE_NAME" | grep '^BUILD=' | awk -F'"' '{print $2}'`"
 	exit
 	;;
 
