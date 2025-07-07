@@ -1,7 +1,7 @@
 #!/bin/sh
 
 VERSION="beta 2"
-BUILD="0000.1"
+BUILD='0707.1'
 PROFILE_PATH='/opt/etc/nfqws'
 BUTTON='/opt/etc/ndm/button.d/nk.sh'
 BACKUP='/opt/backup-nk'
@@ -660,6 +660,27 @@ function ispInterfaceEdit
 	fi
 	}
 
+function listLoad
+	{
+	echo -e "\tЗагрузка..."
+	wget -q -O /tmp/nk.list https://raw.githubusercontent.com/Neytrino-OnLine/NK/refs/heads/main/screenshots/l-1
+	local LIST=`cat /tmp/nk.list | awk -F"\t" '{print NR":\t"$1"\t"$2}'`
+	rm -rf /tmp/nk.list
+	echo ""
+	showText "\tВы можете выбрать один из вариантов (в списке ниже)..."
+	echo ""
+	echo "$LIST" | awk -F"\t" '{print "\t"$1, $2}'
+	echo -e "\t0: Отмена (по умолчанию)"
+	echo ""
+	read -r -p "Ваш выбор:"
+	echo ""
+	if [ -n "`echo "$LIST" | grep "^\$REPLY:"`" ];then
+		REPLY=`echo "$LIST" | grep "^\$REPLY:" | awk -F"\t" '{print $3}'`
+	else
+		REPLY=""
+	fi
+	}
+
 function httpsEdit
 	{
 	headLine "Стратегия обработки HTTP(S) трафика"
@@ -675,6 +696,9 @@ function httpsEdit
 		echo ""
 		read -r -p "Новое значение:"
 		echo ""
+		if [ "$REPLY" = "L" ];then
+			listLoad
+		fi
 		if [ -n "$REPLY" ];then
 			local NEW="$PARAM="'"'"$REPLY"'"'
 			echo "Сохранить старую HTTP(S) стратегию?"
@@ -693,7 +717,7 @@ function httpsEdit
 			CONFIG=`echo "$CONFIG" | awk '/^NFQWS_ARGS=/ { $0 = "repl@ce" } 1' | sed "s/repl@ce/$NEW/g"`
 			CHANGES=`expr $CHANGES + 1`
 			if [ -n "$SAVE" ];then
-				CONFIG=$CONFIG"`echo -e "$SAVE"`"
+				CONFIG="$CONFIG`echo -e "$SAVE"`"
 			fi
 		fi
 	else
@@ -718,6 +742,9 @@ function quicEdit
 		echo ""
 		read -r -p "Новое значение:"
 		echo ""
+		if [ "$REPLY" = "L" ];then
+			listLoad
+		fi
 		if [ -n "$REPLY" ];then
 			local NEW="$PARAM="'"'"$REPLY"'"'
 			echo "Сохранить старую QUIC стратегию?"
@@ -761,6 +788,9 @@ function udpEdit
 		echo ""
 		read -r -p "Новое значение:"
 		echo ""
+		if [ "$REPLY" = "L" ];then
+			listLoad
+		fi
 		if [ -n "$REPLY" ];then
 			local NEW="$PARAM="'"'"$REPLY"'"'
 			echo "Сохранить старую UDP стратегию?"
@@ -804,6 +834,9 @@ function tcpPortsEdit
 		echo ""
 		read -r -p "Новое значение:"
 		echo ""
+		if [ "$REPLY" = "L" ];then
+			listLoad
+		fi
 		if [ -n "$REPLY" ];then
 			local NEW="$PARAM="'"'"$REPLY"'"'
 			echo "Сохранить старое значение?"
@@ -847,6 +880,9 @@ function udpPortsEdit
 		echo ""
 		read -r -p "Новое значение:"
 		echo ""
+		if [ "$REPLY" = "L" ];then
+			listLoad
+		fi
 		if [ -n "$REPLY" ];then
 			local NEW="$PARAM="'"'"$REPLY"'"'
 			echo "Сохранить старое значение?"
@@ -1791,6 +1827,7 @@ function findStrategy
 	echo ""
 	if [ "$REPLY" = "1" ];then
 		echo "`opkg install curl`" > /dev/null
+		echo "`opkg install openssl-util libopenssl`" > /dev/null
 		/bin/sh -c "$(curl -fsSL https://github.com/Anonym-tsk/nfqws-keenetic/raw/master/common/strategy.sh)"
 	fi
 	}
