@@ -1,7 +1,7 @@
 #!/bin/sh
 
 VERSION="beta 2"
-BUILD='0707.1'
+BUILD="0707.1"
 PROFILE_PATH='/opt/etc/nfqws'
 BUTTON='/opt/etc/ndm/button.d/nk.sh'
 BACKUP='/opt/backup-nk'
